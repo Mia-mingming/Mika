@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국어 대화 연습 - Korean Conversation Practice</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text">
+            단계 <span id="currentStep">1</span> / 7
+        </div>
+    </div>
+
+    <!-- Step 1: Scenario Selection -->
+    <div id="scenarioSelection" class="step">
+        <div class="container">
+            <div class="step-header">
+                <h1>🎯 학습 상황을 선택하세요</h1>
+                <p>11가지 상황 중 연습하고 싶은 상황을 선택해주세요.</p>
+            </div>
+            <div class="scenario-grid" id="scenarioGrid">
+                <!-- Scenario cards will be dynamically generated -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 2: Example Animation -->
+    <div id="exampleAnimation" class="step hidden">
+        <div class="container">
+            <div class="step-header">
+                <h2 id="animationTitle">📺 대화 예시</h2>
+                <p>상황별 대화를 애니메이션으로 확인해보세요.</p>
+            </div>
+            <div class="animation-container">
+                <div class="character-stage">
+                    <div class="character character-a" id="characterA">
+                        <div class="character-avatar">🧑‍💼</div>
+                        <div class="speech-bubble hidden" id="bubbleA"></div>
+                    </div>
+                    <div class="character character-b" id="characterB">
+                        <div class="character-avatar">👤</div>
+                        <div class="speech-bubble hidden" id="bubbleB"></div>
+                    </div>
+                </div>
+                <div class="animation-controls">
+                    <button class="btn btn--primary" id="playAnimation">▶️ 애니메이션 재생</button>
+                    <button class="btn btn--secondary" id="pauseAnimation">⏸️ 일시정지</button>
+                    <button class="btn btn--outline" id="replayAnimation">🔄 다시보기</button>
+                </div>
+            </div>
+            <div class="step-navigation">
+                <button class="btn btn--outline" id="backToScenarios">← 상황 선택</button>
+                <button class="btn btn--primary" id="goToRoleSelection">역할 선택 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 3: Role Selection -->
+    <div id="roleSelection" class="step hidden">
+        <div class="container">
+            <div class="step-header">
+                <h2>🎭 역할을 선택하세요</h2>
+                <p>연습하고 싶은 역할을 선택하고 전체 대화를 미리 확인하세요.</p>
+            </div>
+            <div class="role-selection-container">
+                <div class="role-option" data-role="A">
+                    <div class="role-header">
+                        <div class="role-icon">🧑‍💼</div>
+                        <h3>역할 A</h3>
+                        <p id="roleADescription">서비스 제공자</p>
+                    </div>
+                </div>
+                <div class="role-option" data-role="B">
+                    <div class="role-header">
+                        <div class="role-icon">👤</div>
+                        <h3>역할 B</h3>
+                        <p id="roleBDescription">고객/학생</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card__body">
+                    <h3>📖 전체 대화 미리보기</h3>
+                    <div class="dialogue-list" id="dialogueList">
+                        <!-- Dialogue items will be populated here -->
+                    </div>
+                </div>
+            </div>
+            <div class="step-navigation">
+                <button class="btn btn--outline" id="backToAnimation">← 예시 보기</button>
+                <button class="btn btn--primary" id="goToConversationPractice" disabled>대화 연습 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 4: Conversation Practice -->
+    <div id="conversationPractice" class="step hidden">
+        <div class="container">
+            <div class="step-header">
+                <h2>💪 대화 연습</h2>
+                <p>상대방의 대사를 보고 적절한 응답을 입력하세요.</p>
+            </div>
+            <div class="practice-container">
+                <div class="card">
+                    <div class="card__body">
+                        <div class="current-dialogue">
+                            <div class="partner-message">
+                                <div class="message-label">상대방:</div>
+                                <div class="message-text" id="partnerMessage"></div>
+                            </div>
+                            <div class="your-response">
+                                <div class="message-label">당신의 응답:</div>
+                                <textarea class="form-control" id="userResponse" placeholder="응답을 입력하세요..."></textarea>
+                            </div>
+                        </div>
+                        <div class="practice-controls flex gap-16 justify-center">
+                            <button class="btn btn--primary" id="submitResponse">응답 제출</button>
+                            <button class="btn btn--secondary" id="showHint">💡 힌트</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="feedback-container" id="practiceResults">
+                    <div class="practice-feedback hidden" id="practiceFeedback">
+                        <div class="card">
+                            <div class="card__body">
+                                <div class="correct-answer">
+                                    <strong>모범 답안:</strong>
+                                    <div id="correctAnswer"></div>
+                                </div>
+                                <div class="feedback-message" id="feedbackMessage"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="practice-progress">
+                    <div class="progress-info">
+                        진행상황: <span id="practiceProgress">1/8</span>
+                    </div>
+                </div>
+            </div>
+            <div class="step-navigation">
+                <button class="btn btn--outline" id="backToRoleSelection">← 역할 선택</button>
+                <button class="btn btn--primary" id="goToVocabulary" disabled>어휘 학습 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 5: Vocabulary Learning -->
+    <div id="vocabularyLearning" class="step hidden">
+        <div class="container">
+            <div class="step-header">
+                <h2>📚 어휘 학습</h2>
+                <p>상황별 핵심 어휘를 학습하세요.</p>
+            </div>
+            <div class="vocabulary-container">
+                <div class="vocabulary-grid" id="vocabularyGrid">
+                    <!-- Vocabulary cards will be populated here -->
+                </div>
+            </div>
+            <div class="card">
+                <div class="card__body">
+                    <h3>어휘 테스트</h3>
+                    <div class="vocab-question" id="vocabQuestion">
+                        <div class="question-word" id="questionWord"></div>
+                        <div class="question-options" id="questionOptions">
+                            <!-- Options will be populated here -->
+                        </div>
+                    </div>
+                    <div class="vocab-result" id="vocabResult"></div>
+                </div>
+            </div>
+            <div class="step-navigation">
+                <button class="btn btn--outline" id="backToPractice">← 대화 연습</button>
+                <button class="btn btn--primary" id="goToSpeakingTest">말하기 테스트 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 6: Speaking Test -->
+    <div id="speakingTest" class="step hidden">
+        <div class="container">
+            <div class="step-header">
+                <h2>🎤 말하기 테스트</h2>
+                <p>음성 인식을 통해 발음 연습을 해보세요.</p>
+            </div>
+            <div class="speaking-container">
+                <div class="card">
+                    <div class="card__body">
+                        <h3>따라 읽어보세요:</h3>
+                        <div class="sentence-card">
+                            <div class="sentence-text" id="targetSentence"></div>
+                            <button class="btn btn--outline btn--sm" id="playSentence">🔊 듣기</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="speech-controls">
+                    <button class="btn btn--primary" id="startSpeechBtn">🎤 음성 인식 시작</button>
+                    <div class="status-indicator" id="speechStatus">
+                        <span>음성 인식 버튼을 클릭하여 시작하세요.</span>
+                    </div>
+                </div>
+                <div class="card">
+                    <div class="card__body">
+                        <h4>인식된 텍스트:</h4>
+                        <div class="recognized-text" id="recognizedText">여기에 인식된 텍스트가 표시됩니다.</div>
+                    </div>
+                </div>
+                <div class="accuracy-feedback" id="accuracyFeedback"></div>
+                <div class="speaking-progress">
+                    <div>진행상황: <span id="speakingProgress">1/7</span></div>
+                    <button class="btn btn--secondary" id="nextSentenceBtn" disabled>다음 문장 →</button>
+                </div>
+            </div>
+            <div class="step-navigation">
+                <button class="btn btn--outline" id="backToVocabulary">← 어휘 학습</button>
+                <button class="btn btn--primary" id="goToComicTest" disabled>만화 테스트 →</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Step 7: Comic Test -->
+    <div id="comicTest" class="step hidden">
+        <div class="container">
+            <div class="step-header">
+                <h2>🎨 4컷 만화 테스트</h2>
+                <p>학습한 내용을 바탕으로 4컷 만화를 완성하세요.</p>
+            </div>
+            <div class="comic-container">
+                <div class="comic-grid">
+                    <div class="comic-panel" data-panel="1">
+                        <div class="panel-header">1컷</div>
+                        <div class="panel-content">
+                            <div class="image-upload-area" data-panel="1">
+                                <input type="file" class="file-input" accept="image/*">
+                                <div class="upload-placeholder">
+                                    <div class="upload-icon">📸</div>
+                                    <div>이미지를 드래그하거나 클릭하여 업로드</div>
+                                    <div class="upload-note">또는 아래 그리기 버튼 사용</div>
+                                </div>
+                            </div>
+                            <canvas class="drawing-canvas hidden" width="200" height="150" data-panel="1"></canvas>
+                            <button class="btn btn--sm draw-btn" data-panel="1">🎨 그리기</button>
+                        </div>
+                        <div class="speech-bubble-container">
+                            <textarea class="bubble-text" data-panel="1" placeholder="대화를 입력하세요..."></textarea>
+                        </div>
+                    </div>
+                    <div class="comic-panel" data-panel="2">
+                        <div class="panel-header">2컷</div>
+                        <div class="panel-content">
+                            <div class="image-upload-area" data-panel="2">
+                                <input type="file" class="file-input" accept="image/*">
+                                <div class="upload-placeholder">
+                                    <div class="upload-icon">📸</div>
+                                    <div>이미지를 드래그하거나 클릭하여 업로드</div>
+                                    <div class="upload-note">또는 아래 그리기 버튼 사용</div>
+                                </div>
+                            </div>
+                            <canvas class="drawing-canvas hidden" width="200" height="150" data-panel="2"></canvas>
+                            <button class="btn btn--sm draw-btn" data-panel="2">🎨 그리기</button>
+                        </div>
+                        <div class="speech-bubble-container">
+                            <textarea class="bubble-text" data-panel="2" placeholder="대화를 입력하세요..."></textarea>
+                        </div>
+                    </div>
+                    <div class="comic-panel" data-panel="3">
+                        <div class="panel-header">3컷</div>
+                        <div class="panel-content">
+                            <div class="image-upload-area" data-panel="3">
+                                <input type="file" class="file-input" accept="image/*">
+                                <div class="upload-placeholder">
+                                    <div class="upload-icon">📸</div>
+                                    <div>이미지를 드래그하거나 클릭하여 업로드</div>
+                                    <div class="upload-note">또는 아래 그리기 버튼 사용</div>
+                                </div>
+                            </div>
+                            <canvas class="drawing-canvas hidden" width="200" height="150" data-panel="3"></canvas>
+                            <button class="btn btn--sm draw-btn" data-panel="3">🎨 그리기</button>
+                        </div>
+                        <div class="speech-bubble-container">
+                            <textarea class="bubble-text" data-panel="3" placeholder="대화를 입력하세요..."></textarea>
+                        </div>
+                    </div>
+                    <div class="comic-panel" data-panel="4">
+                        <div class="panel-header">4컷</div>
+                        <div class="panel-content">
+                            <div class="image-upload-area" data-panel="4">
+                                <input type="file" class="file-input" accept="image/*">
+                                <div class="upload-placeholder">
+                                    <div class="upload-icon">📸</div>
+                                    <div>이미지를 드래그하거나 클릭하여 업로드</div>
+                                    <div class="upload-note">또는 아래 그리기 버튼 사용</div>
+                                </div>
+                            </div>
+                            <canvas class="drawing-canvas hidden" width="200" height="150" data-panel="4"></canvas>
+                            <button class="btn btn--sm draw-btn" data-panel="4">🎨 그리기</button>
+                        </div>
+                        <div class="speech-bubble-container">
+                            <textarea class="bubble-text" data-panel="4" placeholder="대화를 입력하세요..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                <div class="drawing-tools">
+                    <button class="tool-btn active" data-tool="pen">✏️ 펜</button>
+                    <button class="tool-btn" data-tool="eraser">🧹 지우개</button>
+                    <input type="color" id="colorPicker" value="#000000">
+                    <label for="brushSize">굵기:</label>
+                    <input type="range" id="brushSize" min="1" max="10" value="3">
+                    <button class="btn btn--outline btn--sm" id="clearAllCanvas">🗑️ 모두 지우기</button>
+                </div>
+            </div>
+            <div class="step-navigation">
+                <button class="btn btn--outline" id="backToSpeaking">← 말하기 테스트</button>
+                <button class="btn btn--primary" id="completeTest">완료하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Final Results -->
+    <div id="finalResults" class="step hidden">
+        <div class="container">
+            <div class="step-header">
+                <h2>🎉 학습 완료!</h2>
+                <p>모든 단계를 완료하셨습니다. 결과를 확인해보세요.</p>
+            </div>
+            <div class="results-container">
+                <div class="card">
+                    <div class="card__body">
+                        <div class="results-summary" id="resultsSummary">
+                            <!-- Results will be populated here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="final-actions flex gap-16 justify-center">
+                    <button class="btn btn--primary" id="restartApp">다시 시작하기</button>
+                    <button class="btn btn--secondary" id="downloadResults">결과 다운로드</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

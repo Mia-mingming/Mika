@@ -1,0 +1,1825 @@
+# 한국어 대화 연습 애플리케이션 - 1-7단계 완전 구현
+
+```html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>한국어 대화 연습 - Korean Conversation Practice</title>
+    <style>
+        :root {
+            --primary-color: #4A90E2;
+            --secondary-color: #7ED321;
+            --accent-color: #F5A623;
+            --text-color: #333;
+            --background-color: #f8f9fa;
+            --card-background: white;
+            --border-color: #e9ecef;
+            --shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-background);
+            padding: 10px 20px;
+            box-shadow: var(--shadow);
+            z-index: 1000;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--border-color);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 14.3%; /* 1/7 steps */
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 14px;
+            color: var(--text-color);
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 100px;
+            min-height: calc(100vh - 100px);
+        }
+
+        .step {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .step-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .step-header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .step-header h2 {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .step-header p {
+            font-size: 1.2rem;
+            color: var(--text-color);
+        }
+
+        /* Scenario Grid */
+        .scenario-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .scenario-card {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .scenario-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.2);
+        }
+
+        .scenario-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .scenario-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        /* Animation Container */
+        .animation-container {
+            background: var(--card-background);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+            margin-bottom: 30px;
+        }
+
+        .character-stage {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            min-height: 300px;
+            position: relative;
+        }
+
+        .character {
+            text-align: center;
+            position: relative;
+        }
+
+        .character-avatar {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            animation: bounce 2s infinite;
+        }
+
+        .speech-bubble {
+            background: white;
+            border: 2px solid var(--primary-color);
+            border-radius: 20px;
+            padding: 15px 20px;
+            position: relative;
+            max-width: 250px;
+            margin: 0 auto;
+            color: #000;
+            font-weight: 500;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .speech-bubble:before {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 10px solid var(--primary-color);
+        }
+
+        .speech-bubble.typing {
+            animation: typing 2s steps(20) infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes typing {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #3a7bc8;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #6bc70d;
+            transform: translateY(-2px);
+        }
+
+        .btn-accent {
+            background: var(--accent-color);
+            color: white;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Role Selection */
+        .role-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .role-card {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--border-color);
+        }
+
+        .role-card:hover, .role-card.selected {
+            border-color: var(--primary-color);
+            box-shadow: 0 4px 20px rgba(74, 144, 226, 0.2);
+        }
+
+        .dialogue-preview {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .dialogue-item {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .dialogue-korean {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .dialogue-english {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        /* Practice Section */
+        .practice-container {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .practice-dialogue {
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .practice-input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            transition: border-color 0.3s ease;
+        }
+
+        .practice-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .answer-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .answer-box {
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid;
+        }
+
+        .user-answer {
+            border-color: var(--accent-color);
+            background: rgba(245, 166, 35, 0.1);
+        }
+
+        .correct-answer {
+            border-color: var(--secondary-color);
+            background: rgba(126, 211, 33, 0.1);
+        }
+
+        /* Vocabulary Cards */
+        .vocabulary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .vocabulary-card {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .vocabulary-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--secondary-color);
+        }
+
+        .vocab-word {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .vocab-meaning {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--text-color);
+        }
+
+        .vocab-example {
+            font-size: 0.9rem;
+            color: var(--text-color);
+            font-style: italic;
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        /* Speech Test */
+        .speech-container {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: var(--shadow);
+        }
+
+        .speech-sentence {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .mic-button {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            border: none;
+            background: var(--primary-color);
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 20px auto;
+            display: block;
+        }
+
+        .mic-button:hover {
+            background: #3a7bc8;
+            transform: scale(1.1);
+        }
+
+        .mic-button.recording {
+            background: var(--accent-color);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .recognition-result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f8f9fa;
+            border: 2px solid var(--border-color);
+            font-size: 1.1rem;
+        }
+
+        /* Comic Creation */
+        .comic-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .comic-panel {
+            border: 3px solid var(--text-color);
+            border-radius: 15px;
+            padding: 20px;
+            min-height: 250px;
+            background: white;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .comic-image-area {
+            flex: 1;
+            border: 2px dashed var(--border-color);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            min-height: 150px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .comic-image-area:hover {
+            border-color: var(--primary-color);
+            background: rgba(74, 144, 226, 0.05);
+        }
+
+        .upload-text {
+            color: var(--text-color);
+            font-size: 0.9rem;
+            text-align: center;
+        }
+
+        .comic-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        .comic-text-input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            resize: none;
+            height: 60px;
+        }
+
+        .comic-text-input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        /* Drawing Canvas */
+        .drawing-tools {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            padding: 8px 15px;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .tool-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .canvas-container {
+            border: 2px solid var(--border-color);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        #drawingCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        /* Results and Feedback */
+        .result-container {
+            background: var(--card-background);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .score-display {
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+        }
+
+        .feedback-text {
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: var(--text-color);
+        }
+
+        .confetti {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .scenario-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .role-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .answer-comparison {
+                grid-template-columns: 1fr;
+            }
+            
+            .comic-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: repeat(4, 1fr);
+            }
+            
+            .btn-group {
+                flex-direction: column;
+            }
+            
+            .step-header h1 {
+                font-size: 2rem;
+            }
+            
+            .step-header h2 {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Progress Bar -->
+    <div class="progress-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <div class="progress-text">
+            단계 <span id="currentStep">1</span> / 7
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Step 1: Scenario Selection -->
+        <div id="step1" class="step">
+            <div class="container">
+                <div class="step-header">
+                    <h1>🎯 학습 상황을 선택하세요</h1>
+                    <p>11가지 상황 중 연습하고 싶은 상황을 선택해주세요.</p>
+                </div>
+                <div class="scenario-grid" id="scenarioGrid">
+                    <!-- Scenarios will be generated dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2: Example Animation -->
+        <div id="step2" class="step hidden">
+            <div class="container">
+                <div class="step-header">
+                    <h2 id="animationTitle">📺 대화 예시</h2>
+                    <p>상황별 대화를 애니메이션으로 확인해보세요.</p>
+                </div>
+                <div class="animation-container">
+                    <div class="character-stage">
+                        <div class="character">
+                            <div class="character-avatar">🧑‍💼</div>
+                            <div class="speech-bubble hidden" id="bubbleA"></div>
+                        </div>
+                        <div class="character">
+                            <div class="character-avatar">👤</div>
+                            <div class="speech-bubble hidden" id="bubbleB"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="playAnimation">▶️ 애니메이션 재생</button>
+                    <button class="btn btn-secondary" id="nextToRole">다음 단계 →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Role Selection -->
+        <div id="step3" class="step hidden">
+            <div class="container">
+                <div class="step-header">
+                    <h2>🎭 역할을 선택하세요</h2>
+                    <p>연습하고 싶은 역할을 선택해주세요.</p>
+                </div>
+                <div class="role-container">
+                    <div class="role-card" id="roleA">
+                        <h3>역할 A - 서비스 제공자</h3>
+                        <p>직원, 선생님 등의 역할</p>
+                    </div>
+                    <div class="role-card" id="roleB">
+                        <h3>역할 B - 고객/학생</h3>
+                        <p>손님, 학생 등의 역할</p>
+                    </div>
+                </div>
+                <div class="dialogue-preview" id="dialoguePreview">
+                    <h3>📖 전체 대화 미리보기</h3>
+                    <div id="fullDialogue"></div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="startPractice" disabled>연습 시작하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Practice -->
+        <div id="step4" class="step hidden">
+            <div class="container">
+                <div class="step-header">
+                    <h2>💪 대화 연습</h2>
+                    <p>상대방의 말을 듣고 적절한 응답을 입력해보세요.</p>
+                </div>
+                <div class="practice-container">
+                    <div class="practice-dialogue" id="practiceDialogue"></div>
+                    <input type="text" class="practice-input" id="practiceInput" placeholder="여기에 응답을 입력하세요...">
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="submitAnswer">답변 제출</button>
+                        <button class="btn btn-secondary" id="nextDialogue" style="display: none;">다음 대화</button>
+                    </div>
+                    <div class="answer-comparison hidden" id="answerComparison">
+                        <div class="answer-box user-answer">
+                            <h4>💭 내 답변</h4>
+                            <div id="userAnswerText"></div>
+                        </div>
+                        <div class="answer-box correct-answer">
+                            <h4>✅ 모범 답안</h4>
+                            <div id="correctAnswerText"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-secondary" id="finishPractice" style="display: none;">연습 완료</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 5: Vocabulary Learning -->
+        <div id="step5" class="step hidden">
+            <div class="container">
+                <div class="step-header">
+                    <h2>📚 어휘 학습</h2>
+                    <p>상황별 핵심 어휘를 학습해보세요.</p>
+                </div>
+                <div class="vocabulary-grid" id="vocabularyGrid">
+                    <!-- Vocabulary cards will be generated dynamically -->
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="nextToSpeech">말하기 테스트로 →</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 6: Speech Test -->
+        <div id="step6" class="step hidden">
+            <div class="container">
+                <div class="step-header">
+                    <h2>🎤 말하기 테스트</h2>
+                    <p>아래 문장을 소리내어 읽어보세요.</p>
+                </div>
+                <div class="speech-container">
+                    <div class="speech-sentence" id="speechSentence"></div>
+                    <button class="mic-button" id="micButton">🎤</button>
+                    <p>마이크 버튼을 클릭하고 문장을 읽어보세요</p>
+                    <div class="recognition-result hidden" id="recognitionResult"></div>
+                    <div class="btn-group">
+                        <button class="btn btn-secondary" id="nextSentence">다음 문장</button>
+                        <button class="btn btn-primary" id="finishSpeech">테스트 완료</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 7: Comic Creation -->
+        <div id="step7" class="step hidden">
+            <div class="container">
+                <div class="step-header">
+                    <h2>🎨 4컷 만화 만들기</h2>
+                    <p>학습한 내용으로 나만의 4컷 만화를 만들어보세요.</p>
+                </div>
+                
+                <div class="drawing-tools">
+                    <button class="tool-btn active" data-tool="pen">✏️ 펜</button>
+                    <button class="tool-btn" data-tool="eraser">🧽 지우개</button>
+                    <input type="color" id="colorPicker" value="#000000">
+                    <button class="tool-btn" id="clearCanvas">🗑️ 지우기</button>
+                </div>
+
+                <div class="comic-grid">
+                    <div class="comic-panel">
+                        <div class="comic-image-area" onclick="triggerFileUpload(1)">
+                            <canvas id="canvas1" width="200" height="150" class="hidden"></canvas>
+                            <div class="upload-text">클릭해서 이미지 업로드<br>또는 직접 그리기</div>
+                            <input type="file" class="file-input" id="fileInput1" accept="image/*">
+                        </div>
+                        <textarea class="comic-text-input" placeholder="1컷 대화문을 입력하세요..."></textarea>
+                    </div>
+                    
+                    <div class="comic-panel">
+                        <div class="comic-image-area" onclick="triggerFileUpload(2)">
+                            <canvas id="canvas2" width="200" height="150" class="hidden"></canvas>
+                            <div class="upload-text">클릭해서 이미지 업로드<br>또는 직접 그리기</div>
+                            <input type="file" class="file-input" id="fileInput2" accept="image/*">
+                        </div>
+                        <textarea class="comic-text-input" placeholder="2컷 대화문을 입력하세요..."></textarea>
+                    </div>
+                    
+                    <div class="comic-panel">
+                        <div class="comic-image-area" onclick="triggerFileUpload(3)">
+                            <canvas id="canvas3" width="200" height="150" class="hidden"></canvas>
+                            <div class="upload-text">클릭해서 이미지 업로드<br>또는 직접 그리기</div>
+                            <input type="file" class="file-input" id="fileInput3" accept="image/*">
+                        </div>
+                        <textarea class="comic-text-input" placeholder="3컷 대화문을 입력하세요..."></textarea>
+                    </div>
+                    
+                    <div class="comic-panel">
+                        <div class="comic-image-area" onclick="triggerFileUpload(4)">
+                            <canvas id="canvas4" width="200" height="150" class="hidden"></canvas>
+                            <div class="upload-text">클릭해서 이미지 업로드<br>또는 직접 그리기</div>
+                            <input type="file" class="file-input" id="fileInput4" accept="image/*">
+                        </div>
+                        <textarea class="comic-text-input" placeholder="4컷 대화문을 입력하세요..."></textarea>
+                    </div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-primary" id="submitComic">만화 완성하기</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Final Results -->
+        <div id="results" class="step hidden">
+            <div class="container">
+                <div class="result-container">
+                    <div class="score-display" id="finalScore">100점</div>
+                    <div class="feedback-text">🎉 축하합니다! 모든 단계를 완료했습니다!</div>
+                    <div class="btn-group">
+                        <button class="btn btn-primary" id="restartApp">처음부터 다시</button>
+                        <button class="btn btn-secondary" id="downloadResult">결과 다운로드</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Data Structure
+        const scenarios = {
+            restaurant: {
+                name: "식당",
+                icon: "🍽️",
+                dialogues: [
+                    {role: "A", text: "어서 오세요! 몇 분이세요?", translation: "Welcome! How many people?"},
+                    {role: "B", text: "두 명이요.", translation: "Two people."},
+                    {role: "A", text: "이쪽 자리로 안내해드릴게요.", translation: "I'll guide you to this table."},
+                    {role: "B", text: "메뉴 좀 보여주세요.", translation: "Please show me the menu."},
+                    {role: "A", text: "네, 여기 메뉴입니다.", translation: "Yes, here's the menu."},
+                    {role: "B", text: "김치찌개 하나 주세요.", translation: "One kimchi stew, please."},
+                    {role: "A", text: "음료는 어떻게 하시겠어요?", translation: "What would you like to drink?"},
+                    {role: "B", text: "물 한 잔 주세요.", translation: "One glass of water, please."}
+                ],
+                vocabulary: [
+                    {word: "메뉴", meaning: "음식점에서 제공하는 음식의 목록", example: "메뉴를 보여주세요."},
+                    {word: "주문", meaning: "원하는 음식을 시키는 것", example: "주문하시겠어요?"},
+                    {word: "계산", meaning: "음식값을 지불하는 것", example: "계산해 주세요."},
+                    {word: "음료", meaning: "마시는 것", example: "음료는 뭘 드시겠어요?"},
+                    {word: "자리", meaning: "앉는 곳", example: "빈 자리가 있나요?"}
+                ],
+                practice: [
+                    "이 메뉴로 주문할게요.",
+                    "맛있게 잘 먹었습니다.",
+                    "계산서 좀 주세요.",
+                    "포장 가능한가요?",
+                    "추천 메뉴가 뭐예요?",
+                    "매운 거 안 되는데요.",
+                    "카드로 계산할게요."
+                ]
+            },
+            cafe: {
+                name: "카페",
+                icon: "☕",
+                dialogues: [
+                    {role: "A", text: "어서 오세요! 주문하시겠어요?", translation: "Welcome! Would you like to order?"},
+                    {role: "B", text: "아메리카노 한 잔 주세요.", translation: "One americano, please."},
+                    {role: "A", text: "아이스로 드릴까요, 핫으로 드릴까요?", translation: "Would you like it iced or hot?"},
+                    {role: "B", text: "아이스로 주세요.", translation: "Iced, please."},
+                    {role: "A", text: "사이즈는 어떻게 하시겠어요?", translation: "What size would you like?"},
+                    {role: "B", text: "라지 사이즈로 주세요.", translation: "Large size, please."},
+                    {role: "A", text: "매장에서 드시나요, 포장하시나요?", translation: "For here or to go?"},
+                    {role: "B", text: "포장해 주세요.", translation: "To go, please."}
+                ],
+                vocabulary: [
+                    {word: "아메리카노", meaning: "에스프레소에 뜨거운 물을 넣은 커피", example: "아메리카노 한 잔 주세요."},
+                    {word: "사이즈", meaning: "크기", example: "사이즈는 어떻게 하시겠어요?"},
+                    {word: "포장", meaning: "가져가기 위해 싸는 것", example: "포장해 주세요."},
+                    {word: "매장", meaning: "가게 안", example: "매장에서 드시나요?"},
+                    {word: "라지", meaning: "큰 크기", example: "라지 사이즈로 주세요."}
+                ],
+                practice: [
+                    "테이크아웃으로 주세요.",
+                    "디카페인 있나요?",
+                    "설탕 빼주세요.",
+                    "케이크도 하나 주세요.",
+                    "와이파이 비밀번호가 뭐예요?",
+                    "화장실이 어디예요?",
+                    "영수증 주세요."
+                ]
+            },
+            cosmetic: {
+                name: "화장품가게",
+                icon: "💄",
+                dialogues: [
+                    {role: "A", text: "어서 오세요! 찾으시는 제품이 있나요?", translation: "Welcome! Are you looking for any specific product?"},
+                    {role: "B", text: "립스틱 좀 보고 싶어요.", translation: "I'd like to look at lipsticks."},
+                    {role: "A", text: "어떤 색상을 원하세요?", translation: "What color would you like?"},
+                    {role: "B", text: "빨간색 계열로 보여주세요.", translation: "Please show me red tones."},
+                    {role: "A", text: "이 색상 어떠세요? 테스트해보실 수 있어요.", translation: "How about this color? You can test it."},
+                    {role: "B", text: "네, 테스트해볼게요.", translation: "Yes, I'll test it."},
+                    {role: "A", text: "잘 어울리시네요!", translation: "It looks great on you!"},
+                    {role: "B", text: "이걸로 하겠습니다.", translation: "I'll take this one."}
+                ],
+                vocabulary: [
+                    {word: "립스틱", meaning: "입술에 바르는 화장품", example: "립스틱 좀 보고 싶어요."},
+                    {word: "색상", meaning: "색깔", example: "어떤 색상을 원하세요?"},
+                    {word: "테스트", meaning: "시험해보는 것", example: "테스트해보실 수 있어요."},
+                    {word: "어울리다", meaning: "잘 맞다", example: "잘 어울리시네요!"},
+                    {word: "계열", meaning: "비슷한 종류", example: "빨간색 계열로 보여주세요."}
+                ],
+                practice: [
+                    "이 색깔 어때요?",
+                    "피부 타입이 어떻게 되세요?",
+                    "민감성 피부용 있나요?",
+                    "가격이 어떻게 되나요?",
+                    "다른 색상도 보여주세요.",
+                    "샘플 받을 수 있나요?",
+                    "포장해 주세요."
+                ]
+            },
+            clothing: {
+                name: "옷가게",
+                icon: "👔",
+                dialogues: [
+                    {role: "A", text: "어서 오세요! 무엇을 도와드릴까요?", translation: "Welcome! How can I help you?"},
+                    {role: "B", text: "셔츠 좀 보고 싶어요.", translation: "I'd like to look at shirts."},
+                    {role: "A", text: "어떤 사이즈를 찾으세요?", translation: "What size are you looking for?"},
+                    {role: "B", text: "미디움 사이즈요.", translation: "Medium size."},
+                    {role: "A", text: "이 셔츠 어떠세요?", translation: "How about this shirt?"},
+                    {role: "B", text: "입어봐도 될까요?", translation: "May I try it on?"},
+                    {role: "A", text: "네, 피팅룸이 저쪽에 있어요.", translation: "Yes, the fitting room is over there."},
+                    {role: "B", text: "잘 맞네요. 이걸로 할게요.", translation: "It fits well. I'll take this one."}
+                ],
+                vocabulary: [
+                    {word: "셔츠", meaning: "상의", example: "셔츠 좀 보고 싶어요."},
+                    {word: "사이즈", meaning: "크기", example: "어떤 사이즈를 찾으세요?"},
+                    {word: "피팅룸", meaning: "옷을 입어보는 곳", example: "피팅룸이 저쪽에 있어요."},
+                    {word: "맞다", meaning: "크기가 적당하다", example: "잘 맞네요."},
+                    {word: "입어보다", meaning: "옷을 시험해 입다", example: "입어봐도 될까요?"}
+                ],
+                practice: [
+                    "다른 색깔도 있나요?",
+                    "라지 사이즈는 없나요?",
+                    "할인하는 상품 있나요?",
+                    "교환 가능한가요?",
+                    "이 바지 어때요?",
+                    "신용카드 되나요?",
+                    "영수증 주세요."
+                ]
+            },
+            convenience: {
+                name: "편의점",
+                icon: "🏪",
+                dialogues: [
+                    {role: "A", text: "어서 오세요!", translation: "Welcome!"},
+                    {role: "B", text: "물 하나랑 과자 하나 주세요.", translation: "One water and one snack, please."},
+                    {role: "A", text: "네, 또 필요한 건 없으세요?", translation: "Yes, do you need anything else?"},
+                    {role: "B", text: "담배 한 갑도 주세요.", translation: "One pack of cigarettes too, please."},
+                    {role: "A", text: "신분증 확인 부탁드려요.", translation: "Please show me your ID."},
+                    {role: "B", text: "여기 있어요.", translation: "Here it is."},
+                    {role: "A", text: "총 8,000원입니다.", translation: "That's 8,000 won in total."},
+                    {role: "B", text: "카드로 계산할게요.", translation: "I'll pay by card."}
+                ],
+                vocabulary: [
+                    {word: "과자", meaning: "간식", example: "과자 하나 주세요."},
+                    {word: "담배", meaning: "피우는 것", example: "담배 한 갑 주세요."},
+                    {word: "신분증", meaning: "신원을 확인하는 증명서", example: "신분증 확인 부탁드려요."},
+                    {word: "계산", meaning: "돈을 지불하는 것", example: "카드로 계산할게요."},
+                    {word: "갑", meaning: "담배의 단위", example: "담배 한 갑 주세요."}
+                ],
+                practice: [
+                    "봉지 주세요.",
+                    "현금으로 할게요.",
+                    "잔돈 주세요.",
+                    "영수증 필요 없어요.",
+                    "이거 얼마예요?",
+                    "할인카드 있어요.",
+                    "포인트 적립해 주세요."
+                ]
+            },
+            library: {
+                name: "도서관",
+                icon: "📚",
+                dialogues: [
+                    {role: "A", text: "도서관에 오신 것을 환영합니다.", translation: "Welcome to the library."},
+                    {role: "B", text: "책을 대출하고 싶어요.", translation: "I'd like to borrow books."},
+                    {role: "A", text: "도서관 회원카드 있으세요?", translation: "Do you have a library card?"},
+                    {role: "B", text: "네, 여기 있어요.", translation: "Yes, here it is."},
+                    {role: "A", text: "어떤 책을 찾으세요?", translation: "What books are you looking for?"},
+                    {role: "B", text: "한국 역사에 관한 책이요.", translation: "Books about Korean history."},
+                    {role: "A", text: "3층 역사 코너에 있습니다.", translation: "They're in the history section on the 3rd floor."},
+                    {role: "B", text: "감사합니다.", translation: "Thank you."}
+                ],
+                vocabulary: [
+                    {word: "대출", meaning: "책을 빌리는 것", example: "책을 대출하고 싶어요."},
+                    {word: "회원카드", meaning: "회원임을 증명하는 카드", example: "도서관 회원카드 있으세요?"},
+                    {word: "역사", meaning: "과거에 일어난 일", example: "한국 역사에 관한 책이요."},
+                    {word: "코너", meaning: "구역", example: "3층 역사 코너에 있습니다."},
+                    {word: "반납", meaning: "빌린 것을 돌려주는 것", example: "책 반납하러 왔어요."}
+                ],
+                practice: [
+                    "연장 가능한가요?",
+                    "신간 도서 어디 있나요?",
+                    "복사 서비스 되나요?",
+                    "열람실 자리 있나요?",
+                    "반납일이 언제예요?",
+                    "연체료 얼마예요?",
+                    "예약 가능한가요?"
+                ]
+            },
+            bookstore: {
+                name: "서점",
+                icon: "📖",
+                dialogues: [
+                    {role: "A", text: "어서 오세요! 찾으시는 책이 있나요?", translation: "Welcome! Are you looking for any specific book?"},
+                    {role: "B", text: "한국어 교재 있나요?", translation: "Do you have Korean textbooks?"},
+                    {role: "A", text: "네, 어학 코너에 있어요.", translation: "Yes, they're in the language section."},
+                    {role: "B", text: "초급자용으로 추천해 주세요.", translation: "Please recommend one for beginners."},
+                    {role: "A", text: "이 책이 인기가 많아요.", translation: "This book is very popular."},
+                    {role: "B", text: "가격이 어떻게 되나요?", translation: "What's the price?"},
+                    {role: "A", text: "25,000원입니다.", translation: "It's 25,000 won."},
+                    {role: "B", text: "포장해 주세요.", translation: "Please wrap it."}
+                ],
+                vocabulary: [
+                    {word: "교재", meaning: "공부하는 책", example: "한국어 교재 있나요?"},
+                    {word: "어학", meaning: "언어 공부", example: "어학 코너에 있어요."},
+                    {word: "초급자", meaning: "처음 배우는 사람", example: "초급자용으로 추천해 주세요."},
+                    {word: "인기", meaning: "많은 사람이 좋아하는 것", example: "이 책이 인기가 많아요."},
+                    {word: "포장", meaning: "싸는 것", example: "포장해 주세요."}
+                ],
+                practice: [
+                    "베스트셀러 뭐가 있나요?",
+                    "할인하는 책 있나요?",
+                    "온라인 주문 가능한가요?",
+                    "배송 되나요?",
+                    "중고책도 있나요?",
+                    "교환 가능한가요?",
+                    "영수증 주세요."
+                ]
+            },
+            schoolFriends: {
+                name: "학교(친구들)",
+                icon: "👥",
+                dialogues: [
+                    {role: "A", text: "안녕! 오늘 수업 어땠어?", translation: "Hi! How was class today?"},
+                    {role: "B", text: "힘들었어. 수학이 너무 어려워.", translation: "It was hard. Math is too difficult."},
+                    {role: "A", text: "나도 그래. 같이 공부할래?", translation: "Me too. Do you want to study together?"},
+                    {role: "B", text: "좋아! 도서관에서 만날까?", translation: "Good! Shall we meet at the library?"},
+                    {role: "A", text: "몇 시에 만날까?", translation: "What time shall we meet?"},
+                    {role: "B", text: "4시 어때?", translation: "How about 4 o'clock?"},
+                    {role: "A", text: "좋아, 그럼 나중에 봐!", translation: "Good, see you later!"},
+                    {role: "B", text: "응, 나중에 봐!", translation: "Yes, see you later!"}
+                ],
+                vocabulary: [
+                    {word: "수업", meaning: "학교에서 배우는 시간", example: "오늘 수업 어땠어?"},
+                    {word: "수학", meaning: "숫자와 계산을 다루는 과목", example: "수학이 너무 어려워."},
+                    {word: "공부", meaning: "배우고 익히는 것", example: "같이 공부할래?"},
+                    {word: "도서관", meaning: "책을 읽는 곳", example: "도서관에서 만날까?"},
+                    {word: "나중에", meaning: "뒤에", example: "나중에 봐!"}
+                ],
+                practice: [
+                    "숙제 했어?",
+                    "점심 뭐 먹을까?",
+                    "시험 언제야?",
+                    "같이 갈래?",
+                    "전화번호 좀 알려줘.",
+                    "주말에 뭐 해?",
+                    "잘 모르겠어."
+                ]
+            },
+            schoolTeacher: {
+                name: "학교(선생님)",
+                icon: "👨‍🏫",
+                dialogues: [
+                    {role: "A", text: "안녕하세요, 선생님.", translation: "Hello, teacher."},
+                    {role: "B", text: "안녕하세요. 무슨 일이세요?", translation: "Hello. What's the matter?"},
+                    {role: "A", text: "수업 내용 중에 질문이 있어요.", translation: "I have a question about the class content."},
+                    {role: "B", text: "네, 무엇이 궁금하세요?", translation: "Yes, what are you curious about?"},
+                    {role: "A", text: "3페이지 문제를 잘 모르겠어요.", translation: "I don't understand the problem on page 3."},
+                    {role: "B", text: "여기 봐요. 이렇게 하면 돼요.", translation: "Look here. You can do it like this."},
+                    {role: "A", text: "아, 이제 이해했어요.", translation: "Ah, now I understand."},
+                    {role: "B", text: "또 궁금한 것 있으면 언제든 물어보세요.", translation: "If you have any more questions, ask anytime."}
+                ],
+                vocabulary: [
+                    {word: "선생님", meaning: "가르치는 사람", example: "안녕하세요, 선생님."},
+                    {word: "질문", meaning: "궁금한 것을 묻는 것", example: "질문이 있어요."},
+                    {word: "내용", meaning: "들어있는 것", example: "수업 내용 중에 질문이 있어요."},
+                    {word: "문제", meaning: "풀어야 하는 것", example: "3페이지 문제를 잘 모르겠어요."},
+                    {word: "이해", meaning: "뜻을 알아차리는 것", example: "이제 이해했어요."}
+                ],
+                practice: [
+                    "설명 좀 다시 해주세요.",
+                    "과제 언제까지 내야 해요?",
+                    "시험 범위가 어디까지예요?",
+                    "결석계 내려고 해요.",
+                    "성적 상담 받고 싶어요.",
+                    "추천서 써주실 수 있나요?",
+                    "감사합니다."
+                ]
+            },
+            schoolHomework: {
+                name: "학교(숙제)",
+                icon: "✏️",
+                dialogues: [
+                    {role: "A", text: "숙제 다 했어?", translation: "Did you finish your homework?"},
+                    {role: "B", text: "아니, 수학 숙제가 너무 어려워.", translation: "No, the math homework is too difficult."},
+                    {role: "A", text: "어느 부분이 어려워?", translation: "Which part is difficult?"},
+                    {role: "B", text: "방정식 푸는 게 잘 안 돼.", translation: "I can't solve equations well."},
+                    {role: "A", text: "같이 해볼까? 내가 도와줄게.", translation: "Shall we do it together? I'll help you."},
+                    {role: "B", text: "정말? 고마워!", translation: "Really? Thank you!"},
+                    {role: "A", text: "이렇게 하면 돼. 이해했어?", translation: "You do it like this. Do you understand?"},
+                    {role: "B", text: "네, 이제 알겠어요. 도움 주셔서 감사해요.", translation: "Yes, now I understand. Thank you for your help."}
+                ],
+                vocabulary: [
+                    {word: "숙제", meaning: "집에서 하는 공부", example: "숙제 다 했어?"},
+                    {word: "방정식", meaning: "수학의 한 종류", example: "방정식 푸는 게 잘 안 돼."},
+                    {word: "부분", meaning: "전체 중의 일부", example: "어느 부분이 어려워?"},
+                    {word: "도움", meaning: "돕는 것", example: "도움 주셔서 감사해요."},
+                    {word: "이해", meaning: "뜻을 알아차리는 것", example: "이해했어?"}
+                ],
+                practice: [
+                    "숙제 언제까지 내야 해?",
+                    "같이 하자.",
+                    "모르는 문제가 있어.",
+                    "설명해 줄 수 있어?",
+                    "답 좀 확인해 줘.",
+                    "시간이 부족해.",
+                    "내일까지 끝낼 수 있을까?"
+                ]
+            },
+            schoolExam: {
+                name: "학교(시험)",
+                icon: "📝",
+                dialogues: [
+                    {role: "A", text: "다음 주에 시험 있다고 들었어.", translation: "I heard there's an exam next week."},
+                    {role: "B", text: "맞아. 중간고사야.", translation: "That's right. It's the midterm exam."},
+                    {role: "A", text: "시험 범위가 어디까지야?", translation: "What's the exam scope?"},
+                    {role: "B", text: "1장부터 5장까지래.", translation: "From chapter 1 to 5."},
+                    {role: "A", text: "같이 공부할까?", translation: "Shall we study together?"},
+                    {role: "B", text: "좋아! 언제 만날까?", translation: "Good! When shall we meet?"},
+                    {role: "A", text: "내일 오후에 어때?", translation: "How about tomorrow afternoon?"},
+                    {role: "B", text: "좋아, 열심히 준비하자!", translation: "Good, let's prepare hard!"}
+                ],
+                vocabulary: [
+                    {word: "시험", meaning: "실력을 확인하는 것", example: "다음 주에 시험 있어."},
+                    {word: "중간고사", meaning: "학기 중간에 보는 시험", example: "중간고사야."},
+                    {word: "범위", meaning: "정해진 구역", example: "시험 범위가 어디까지야?"},
+                    {word: "장", meaning: "책의 단위", example: "1장부터 5장까지래."},
+                    {word: "준비", meaning: "미리 갖추는 것", example: "열심히 준비하자!"}
+                ],
+                practice: [
+                    "시험 잘 봤어?",
+                    "몇 점 받았어?",
+                    "어려웠어?",
+                    "복습 같이 하자.",
+                    "기출문제 있어?",
+                    "공부 방법 알려줘.",
+                    "걱정 많이 돼."
+                ]
+            }
+        };
+
+        // App State
+        let currentScenario = null;
+        let currentStep = 1;
+        let selectedRole = null;
+        let practiceIndex = 0;
+        let speechScore = 0;
+        let recognition = null;
+        let isRecording = false;
+
+        // Initialize App
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            renderScenarios();
+            updateProgress(1);
+            
+            // Event Listeners
+            document.getElementById('playAnimation').addEventListener('click', playAnimation);
+            document.getElementById('nextToRole').addEventListener('click', () => goToStep(3));
+            document.getElementById('roleA').addEventListener('click', () => selectRole('A'));
+            document.getElementById('roleB').addEventListener('click', () => selectRole('B'));
+            document.getElementById('startPractice').addEventListener('click', () => goToStep(4));
+            document.getElementById('submitAnswer').addEventListener('click', submitAnswer);
+            document.getElementById('nextDialogue').addEventListener('click', nextDialogue);
+            document.getElementById('finishPractice').addEventListener('click', () => goToStep(5));
+            document.getElementById('nextToSpeech').addEventListener('click', () => goToStep(6));
+            document.getElementById('micButton').addEventListener('click', toggleRecording);
+            document.getElementById('nextSentence').addEventListener('click', nextSentence);
+            document.getElementById('finishSpeech').addEventListener('click', () => goToStep(7));
+            document.getElementById('submitComic').addEventListener('click', submitComic);
+            document.getElementById('restartApp').addEventListener('click', restartApp);
+            
+            // Drawing and upload functionality
+            setupDrawingCanvas();
+            setupFileUploads();
+            
+            // Tool selection
+            document.querySelectorAll('.tool-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+        }
+
+        function renderScenarios() {
+            const grid = document.getElementById('scenarioGrid');
+            grid.innerHTML = '';
+            
+            Object.keys(scenarios).forEach(key => {
+                const scenario = scenarios[key];
+                const card = document.createElement('div');
+                card.className = 'scenario-card';
+                card.innerHTML = `
+                    <span class="scenario-icon">${scenario.icon}</span>
+                    <div class="scenario-title">${scenario.name}</div>
+                `;
+                card.addEventListener('click', () => selectScenario(key));
+                grid.appendChild(card);
+            });
+        }
+
+        function selectScenario(scenarioKey) {
+            currentScenario = scenarioKey;
+            document.getElementById('animationTitle').textContent = `📺 ${scenarios[scenarioKey].name} 대화 예시`;
+            goToStep(2);
+        }
+
+        function goToStep(step) {
+            // Hide all steps
+            document.querySelectorAll('.step').forEach(el => el.classList.add('hidden'));
+            
+            // Show current step
+            document.getElementById(`step${step}`).classList.remove('hidden');
+            
+            currentStep = step;
+            updateProgress(step);
+            
+            // Step-specific initialization
+            if (step === 3) {
+                renderDialoguePreview();
+            } else if (step === 4) {
+                startPractice();
+            } else if (step === 5) {
+                renderVocabulary();
+            } else if (step === 6) {
+                initializeSpeechTest();
+            } else if (step === 7) {
+                initializeComicCreation();
+            }
+        }
+
+        function updateProgress(step) {
+            const fill = document.getElementById('progressFill');
+            const text = document.getElementById('currentStep');
+            
+            fill.style.width = `${(step / 7) * 100}%`;
+            text.textContent = step;
+        }
+
+        function playAnimation() {
+            const dialogues = scenarios[currentScenario].dialogues;
+            const bubbleA = document.getElementById('bubbleA');
+            const bubbleB = document.getElementById('bubbleB');
+            
+            let index = 0;
+            
+            function showNextDialogue() {
+                if (index >= dialogues.length) return;
+                
+                const dialogue = dialogues[index];
+                const bubble = dialogue.role === 'A' ? bubbleA : bubbleB;
+                const otherBubble = dialogue.role === 'A' ? bubbleB : bubbleA;
+                
+                otherBubble.classList.add('hidden');
+                bubble.textContent = dialogue.text;
+                bubble.classList.remove('hidden');
+                bubble.classList.add('typing');
+                
+                // Speech synthesis
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(dialogue.text);
+                    utterance.lang = 'ko-KR';
+                    utterance.rate = 0.9;
+                    speechSynthesis.speak(utterance);
+                }
+                
+                index++;
+                
+                setTimeout(() => {
+                    bubble.classList.remove('typing');
+                    if (index < dialogues.length) {
+                        setTimeout(showNextDialogue, 1000);
+                    }
+                }, 2000);
+            }
+            
+            showNextDialogue();
+        }
+
+        function selectRole(role) {
+            selectedRole = role;
+            
+            document.querySelectorAll('.role-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            
+            document.getElementById(`role${role}`).classList.add('selected');
+            document.getElementById('startPractice').disabled = false;
+        }
+
+        function renderDialoguePreview() {
+            const dialogues = scenarios[currentScenario].dialogues;
+            const container = document.getElementById('fullDialogue');
+            
+            container.innerHTML = '';
+            
+            dialogues.forEach(dialogue => {
+                const item = document.createElement('div');
+                item.className = 'dialogue-item';
+                item.innerHTML = `
+                    <div class="dialogue-korean"><strong>${dialogue.role}:</strong> ${dialogue.text}</div>
+                    <div class="dialogue-english">${dialogue.translation}</div>
+                `;
+                container.appendChild(item);
+            });
+        }
+
+        function startPractice() {
+            practiceIndex = 0;
+            showPracticeDialogue();
+        }
+
+        function showPracticeDialogue() {
+            const dialogues = scenarios[currentScenario].dialogues;
+            
+            // Find next dialogue for the opposite role
+            while (practiceIndex < dialogues.length && 
+                   dialogues[practiceIndex].role === selectedRole) {
+                practiceIndex++;
+            }
+            
+            if (practiceIndex >= dialogues.length) {
+                document.getElementById('finishPractice').style.display = 'block';
+                return;
+            }
+            
+            const dialogue = dialogues[practiceIndex];
+            document.getElementById('practiceDialogue').textContent = 
+                `상대방: "${dialogue.text}"`;
+            
+            document.getElementById('practiceInput').value = '';
+            document.getElementById('answerComparison').classList.add('hidden');
+            document.getElementById('nextDialogue').style.display = 'none';
+        }
+
+        function submitAnswer() {
+            const userAnswer = document.getElementById('practiceInput').value.trim();
+            const dialogues = scenarios[currentScenario].dialogues;
+            
+            // Find the correct answer (next dialogue from selected role)
+            let correctIndex = practiceIndex + 1;
+            while (correctIndex < dialogues.length && 
+                   dialogues[correctIndex].role !== selectedRole) {
+                correctIndex++;
+            }
+            
+            if (correctIndex < dialogues.length) {
+                const correctAnswer = dialogues[correctIndex].text;
+                
+                document.getElementById('userAnswerText').textContent = userAnswer;
+                document.getElementById('correctAnswerText').textContent = correctAnswer;
+                document.getElementById('answerComparison').classList.remove('hidden');
+                document.getElementById('nextDialogue').style.display = 'block';
+            }
+        }
+
+        function nextDialogue() {
+            practiceIndex += 2; // Skip both the prompt and the answer
+            showPracticeDialogue();
+        }
+
+        function renderVocabulary() {
+            const vocabulary = scenarios[currentScenario].vocabulary;
+            const grid = document.getElementById('vocabularyGrid');
+            
+            grid.innerHTML = '';
+            
+            vocabulary.forEach(word => {
+                const card = document.createElement('div');
+                card.className = 'vocabulary-card';
+                card.innerHTML = `
+                    <div class="vocab-word">${word.word}</div>
+                    <div class="vocab-meaning">${word.meaning}</div>
+                    <div class="vocab-example">"${word.example}"</div>
+                `;
+                
+                card.addEventListener('click', () => {
+                    if ('speechSynthesis' in window) {
+                        const utterance = new SpeechSynthesisUtterance(word.word);
+                        utterance.lang = 'ko-KR';
+                        speechSynthesis.speak(utterance);
+                    }
+                });
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function initializeSpeechTest() {
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                alert('음성 인식을 지원하지 않는 브라우저입니다.');
+                return;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.lang = 'ko-KR';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.onresult = function(event) {
+                const result = event.results[0][0].transcript;
+                document.getElementById('recognitionResult').textContent = `인식된 음성: "${result}"`;
+                document.getElementById('recognitionResult').classList.remove('hidden');
+                
+                // Simple scoring based on similarity
+                const target = document.getElementById('speechSentence').textContent;
+                const similarity = calculateSimilarity(result, target);
+                speechScore += similarity;
+            };
+            
+            recognition.onerror = function(event) {
+                console.error('Speech recognition error:', event.error);
+                document.getElementById('micButton').classList.remove('recording');
+                isRecording = false;
+            };
+            
+            recognition.onend = function() {
+                document.getElementById('micButton').classList.remove('recording');
+                isRecording = false;
+            };
+            
+            nextSentence();
+        }
+
+        function toggleRecording() {
+            if (!recognition) return;
+            
+            if (isRecording) {
+                recognition.stop();
+            } else {
+                document.getElementById('recognitionResult').classList.add('hidden');
+                document.getElementById('micButton').classList.add('recording');
+                isRecording = true;
+                recognition.start();
+            }
+        }
+
+        function nextSentence() {
+            const practices = scenarios[currentScenario].practice;
+            const randomIndex = Math.floor(Math.random() * practices.length);
+            document.getElementById('speechSentence').textContent = practices[randomIndex];
+            document.getElementById('recognitionResult').classList.add('hidden');
+        }
+
+        function calculateSimilarity(str1, str2) {
+            // Simple similarity calculation
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            
+            if (longer.length === 0) return 1.0;
+            
+            const distance = levenshteinDistance(longer, shorter);
+            return (longer.length - distance) / longer.length;
+        }
+
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+            
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+            
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+            
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            
+            return matrix[str2.length][str1.length];
+        }
+
+        function initializeComicCreation() {
+            // Setup canvas drawing for each panel
+            for (let i = 1; i <= 4; i++) {
+                const canvas = document.getElementById(`canvas${i}`);
+                const ctx = canvas.getContext('2d');
+                
+                let isDrawing = false;
+                let currentTool = 'pen';
+                
+                canvas.addEventListener('mousedown', startDrawing);
+                canvas.addEventListener('mousemove', draw);
+                canvas.addEventListener('mouseup', stopDrawing);
+                canvas.addEventListener('mouseout', stopDrawing);
+                
+                // Touch events for mobile
+                canvas.addEventListener('touchstart', handleTouch);
+                canvas.addEventListener('touchmove', handleTouch);
+                canvas.addEventListener('touchend', stopDrawing);
+                
+                function startDrawing(e) {
+                    isDrawing = true;
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                }
+                
+                function draw(e) {
+                    if (!isDrawing) return;
+                    
+                    const rect = canvas.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    ctx.lineWidth = currentTool === 'pen' ? 2 : 10;
+                    ctx.lineCap = 'round';
+                    ctx.strokeStyle = currentTool === 'pen' ? 
+                        document.getElementById('colorPicker').value : 'white';
+                    ctx.globalCompositeOperation = currentTool === 'pen' ? 
+                        'source-over' : 'destination-out';
+                    
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y);
+                }
+                
+                function stopDrawing() {
+                    isDrawing = false;
+                    ctx.beginPath();
+                }
+                
+                function handleTouch(e) {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 
+                        e.type === 'touchmove' ? 'mousemove' : 'mouseup', {
+                        clientX: touch.clientX,
+                        clientY: touch.clientY
+                    });
+                    canvas.dispatchEvent(mouseEvent);
+                }
+            }
+        }
+
+        function setupDrawingCanvas() {
+            document.getElementById('clearCanvas').addEventListener('click', function() {
+                for (let i = 1; i <= 4; i++) {
+                    const canvas = document.getElementById(`canvas${i}`);
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            });
+        }
+
+        function setupFileUploads() {
+            for (let i = 1; i <= 4; i++) {
+                const fileInput = document.getElementById(`fileInput${i}`);
+                const imageArea = fileInput.parentElement;
+                
+                fileInput.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (file && file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            const img = document.createElement('img');
+                            img.src = e.target.result;
+                            img.className = 'comic-image';
+                            
+                            // Replace content
+                            imageArea.innerHTML = '';
+                            imageArea.appendChild(img);
+                            imageArea.appendChild(fileInput);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+                
+                // Drag and drop
+                imageArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    imageArea.style.borderColor = 'var(--primary-color)';
+                });
+                
+                imageArea.addEventListener('dragleave', function(e) {
+                    e.preventDefault();
+                    imageArea.style.borderColor = 'var(--border-color)';
+                });
+                
+                imageArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    imageArea.style.borderColor = 'var(--border-color)';
+                    
+                    const files = e.dataTransfer.files;
+                    if (files.length > 0 && files[0].type.startsWith('image/')) {
+                        fileInput.files = files;
+                        fileInput.dispatchEvent(new Event('change'));
+                    }
+                });
+            }
+        }
+
+        function triggerFileUpload(panelNumber) {
+            const fileInput = document.getElementById(`fileInput${panelNumber}`);
+            const canvas = document.getElementById(`canvas${panelNumber}`);
+            
+            // Toggle between canvas and file upload
+            if (canvas.classList.contains('hidden')) {
+                // Show canvas for drawing
+                canvas.classList.remove('hidden');
+                canvas.parentElement.querySelector('.upload-text').style.display = 'none';
+            } else {
+                // Trigger file upload
+                fileInput.click();
+            }
+        }
+
+        function submitComic() {
+            // Collect all text inputs
+            const texts = [];
+            const textInputs = document.querySelectorAll('.comic-text-input');
+            textInputs.forEach(input => {
+                texts.push(input.value.trim());
+            });
+            
+            // Simple validation
+            const filledTexts = texts.filter(text => text.length > 0);
+            const score = Math.min(100, Math.max(50, filledTexts.length * 25));
+            
+            // Check for vocabulary usage
+            const vocabulary = scenarios[currentScenario].vocabulary;
+            let vocabUsed = 0;
+            
+            vocabulary.forEach(word => {
+                const used = texts.some(text => text.includes(word.word));
+                if (used) vocabUsed++;
+            });
+            
+            const bonusScore = vocabUsed * 5;
+            const finalScore = Math.min(100, score + bonusScore);
+            
+            showResults(finalScore);
+        }
+
+        function showResults(score) {
+            document.getElementById('finalScore').textContent = `${score}점`;
+            
+            let feedback = '';
+            if (score >= 90) {
+                feedback = '🎉 완벽합니다! 모든 단계를 훌륭히 완료했습니다!';
+            } else if (score >= 80) {
+                feedback = '👏 잘했습니다! 한국어 실력이 많이 늘었네요!';
+            } else if (score >= 70) {
+                feedback = '👍 좋아요! 조금 더 연습하면 완벽할 거예요!';
+            } else {
+                feedback = '💪 수고했어요! 계속 연습해서 실력을 늘려보세요!';
+            }
+            
+            document.querySelector('.feedback-text').textContent = feedback;
+            
+            // Show confetti effect
+            createConfetti();
+            
+            goToStep('results');
+        }
+
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            document.body.appendChild(confetti);
+            
+            for (let i = 0; i < 100; i++) {
+                const piece = document.createElement('div');
+                piece.style.position = 'absolute';
+                piece.style.width = '10px';
+                piece.style.height = '10px';
+                piece.style.backgroundColor = `hsl(${Math.random() * 360}, 50%, 50%)`;
+                piece.style.left = Math.random() * 100 + '%';
+                piece.style.animationDuration = Math.random() * 3 + 2 + 's';
+                piece.style.animationDelay = Math.random() * 2 + 's';
+                confetti.appendChild(piece);
+            }
+            
+            setTimeout(() => {
+                document.body.removeChild(confetti);
+            }, 5000);
+        }
+
+        function restartApp() {
+            currentScenario = null;
+            currentStep = 1;
+            selectedRole = null;
+            practiceIndex = 0;
+            speechScore = 0;
+            
+            // Hide all steps except first
+            document.querySelectorAll('.step').forEach(el => el.classList.add('hidden'));
+            document.getElementById('step1').classList.remove('hidden');
+            
+            // Reset progress
+            updateProgress(1);
+            
+            // Clear any existing confetti
+            const existingConfetti = document.querySelector('.confetti');
+            if (existingConfetti) {
+                document.body.removeChild(existingConfetti);
+            }
+        }
+
+        // Make goToStep function available globally for results step
+        window.goToStep = function(step) {
+            if (step === 'results') {
+                document.querySelectorAll('.step').forEach(el => el.classList.add('hidden'));
+                document.getElementById('results').classList.remove('hidden');
+            } else {
+                goToStep(step);
+            }
+        };
+    </script>
+</body>
+</html>
+```
+
+이 파일은 1-7단계를 모두 포함한 완전한 한국어 대화 연습 애플리케이션입니다.
+
+## 주요 기능
+
+### 11가지 상황 완전 구현
+- 식당, 카페, 화장품가게, 옷가게, 편의점, 도서관, 서점
+- 학교(친구들), 학교(선생님), 학교(시험), 학교(숙제)
+
+### 7단계 학습 시스템
+1. **상황 선택**: 11가지 상황 중 선택
+2. **예시 보기**: 웹툰 스타일 애니메이션과 음성 재생
+3. **역할 선택**: A/B 역할 선택 및 한국어-영어 병렬 대화 확인
+4. **대화 연습**: 테스트 형태의 역할별 연습
+5. **어휘 학습**: 상황별 핵심 어휘 5개 학습
+6. **말하기 테스트**: Web Speech Recognition을 활용한 음성 인식
+7. **4컷 만화**: 이미지 업로드 및 Canvas 그리기 기능
+
+### 핵심 기술
+- Web Speech API (음성 합성 및 인식)
+- HTML5 Canvas (그리기 기능)
+- File API (이미지 업로드)
+- 반응형 디자인
+- 애니메이션 효과
